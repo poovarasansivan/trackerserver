@@ -18,11 +18,10 @@ func main() {
     http.HandleFunc("/getTrack", track.GetTrack)
     http.HandleFunc("/getLocation", location.GetLocation)
     http.HandleFunc("/getPath", location.GetPath)
-
-    // Pass db to GetMessages
-	http.HandleFunc("/getMessages", func(w http.ResponseWriter, r *http.Request) {
-		track.GetMessages(w, r, config.Database)
-	})
+   
+    // http.HandleFunc("/getmessage", track.GetMessages)
+	// http.HandleFunc("/getsend", track.SendMessage)
+	
 	
 
     // Start the server

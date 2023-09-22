@@ -1,47 +1,35 @@
 package track
 
 import (
-    "database/sql"
-    "encoding/json"
-    "net/http"
-    "log"
+	"encoding/json"
+	"net/http"
+
 )
 
 type Message struct {
-    ID       int    `json:"id"`
-    Content  string `json:"content"`
-    Response string `json:"response"`
+	ID       int    `json:"id"`
+	Content  string `json:"content"`
+	Response string `json:"response"`
 }
 
-func getResponse(db *sql.DB, input string) (string, error) {
-	log.Println( input)
-    row := db.QueryRow("SELECT response FROM messages WHERE content = ?", input)
-    var response string
-    err := row.Scan(&response)
-    if err != nil {
-        return "", err
-    }
-    return response, nil
+var messages []Message
+
+func GetMessages(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(messages)
 }
 
-func GetMessages(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-    input := r.FormValue("content")
-    botMessage, err := getResponse(db, input)
+func SendMessage(w http.ResponseWriter, r *http.Request) {
+	var newMessage Message
+	err := json.NewDecoder(r.Body).Decode(&newMessage)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-    if err != nil {
-        log.Println("Error getting response:", err)
-        w.WriteHeader(http.StatusInternalServerError)
-        return
-    }
+	newMessage.ID = len(messages) + 1
+	messages = append(messages, newMessage)
 
-    if botMessage == "" {
-        botMessage = "Sorry, I don't understand."
-    }
-
-    var messages []Message
-    messages = append(messages, Message{Content: input, Response: "user"})
-    messages = append(messages, Message{Content: botMessage, Response: "Driver"})
-
-    w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(messages)
+	w.WriteHeader(http.StatusCreated)
 }
+
